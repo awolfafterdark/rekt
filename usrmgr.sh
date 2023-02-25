@@ -11,8 +11,36 @@ API_KEY="AIzaSyCm99fk0vDQlgXMgTM9fzlqXiQWHpdOMKA"
 ENDPOINT="us-central1-chatbot-e10c8.cloudfunctions.net/chatbot"
 
 # Generate a new token
+# Fill in your Firebase Offline Token Gen data here
+client_id="568928957521-m57oil8lfnf2qlq6jnq4blp1ljcq4bc8.apps.googleusercontent.com"
+gcm_sender_id="568928957521"
+project_id="aichat-4fb19"
+api_key="AIzaSyCm99fk0vDQlgXMgTM9fzlqXiQWHpdOMKA"
 
-TOKEN=$(curl -s -X POST "https://$ENDPOINT" -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" -d '{"client_id":"'$CLIENT_ID'", "offline": true}' | jq -r '.["firebase_access_token"]')
+# Generate a token
+now=$(date +%s)
+exp_seconds=3600 # Token valid for 1 hour
+exp_time=$((now+exp_seconds))
+
+# Create the token payload
+payload='{
+    "iss": "'$client_id'",
+    "sub": "'$client_id'",
+    "aud": "https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit",
+    "iat": '$now',
+    "exp": '$exp_time',
+    "uid": "1",
+    "claims": {
+        "kid": "p256",
+        "alg": "RS256",
+        "typ": "JWT"
+    }
+}'
+
+# Sign the token using the API key
+TOKEN=$(echo -n "$payload" | openssl dgst -sha256 -binary -hmac "$api_key" | openssl base64 -A)
+
+echo "Generated token: $TOKEN"
 
 echo "Select an option:"
 
