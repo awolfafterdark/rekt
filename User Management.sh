@@ -1,144 +1,104 @@
 #!/bin/bash
 
-# set variables
-
+# Set variables
 API_KEY="AIzaSyCm99fk0vDQlgXMgTM9fzlqXiQWHpdOMKA"
+CLIENT_ID="568928957521-m57oil8lfnf2qlq6jnq4blp1ljcq4bc8.apps.googleusercontent.com"
+ENDPOINT="https://us-central1-chatbot-e10c8.cloudfunctions.net"
+TOKEN=""
 
-BASE_URL="https://identitytoolkit.googleapis.com/v1/accounts"
+# Function to generate a token using custom token
+generate_token() {
+  # Get custom token from input
+  read -p "Enter custom token: " custom_token
 
-ENDPOINT="/"
+  # Send API request to generate a token using custom token
+  response=$(curl -s -X POST \
+  "$ENDPOINT/generateToken" \
+  -H "Content-Type: application/json" \
+  --data '{"customToken":"'"$custom_token"'"}')
 
-# function to create user
+  # Extract token from response and store it in global variable
+  TOKEN=$(echo $response | jq -r '.token')
+}
 
+# Function to create a new user
 create_user() {
+  # Get user details from input
+  read -p "Enter user email: " email
+  read -p "Enter user password: " password
 
-    read -p "Enter email address: " email
+  # Send API request to create a new user
+  response=$(curl -s -X POST \
+  "$ENDPOINT/createUser" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data '{"email":"'"$email"'","password":"'"$password"'"}')
 
-    read -p "Enter password: " password
-
-    read -p "Enter display name: " displayName
-
-    json="{\"email\":\"$email\",\"password\":\"$password\",\"displayName\":\"$displayName\",\"returnSecureToken\":true}"
-
-    response=$(curl -s -X POST -H "Content-Type: application/json" -d "$json" "$BASE_URL:$ENDPOINT?key=$API_KEY")
-
-    error=$(echo "$response" | jq -r '.error.message')
-
-    if [ "$error" != "null" ]; then
-
-        echo "Error: $error"
-
-    else
-
-        echo "User created successfully."
-
-    fi
-
+  # Display response
+  echo $response
 }
 
-# function to get user info
-
-get_user() {
-
-    read -p "Enter user id: " userId
-
-    response=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"idToken\":\"$userId\"}" "$BASE_URL:lookup?key=$API_KEY")
-
-    error=$(echo "$response" | jq -r '.error.message')
-
-    if [ "$error" != "null" ]; then
-
-        echo "Error: $error"
-
-    else
-
-        echo "$response"
-
-    fi
-
-}
-
-# function to update user info
-
+# Function to update an existing user
 update_user() {
+  # Get user details from input
+  read -p "Enter user email: " email
+  read -p "Enter new password: " password
 
-    read -p "Enter user id: " userId
+  # Send API request to update user
+  response=$(curl -s -X PUT \
+  "$ENDPOINT/updateUser" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data '{"email":"'"$email"'","password":"'"$password"'"}')
 
-    read -p "Enter new display name: " displayName
-
-    json="{\"idToken\":\"$userId\",\"displayName\":\"$displayName\",\"returnSecureToken\":true}"
-
-    response=$(curl -s -X POST -H "Content-Type: application/json" -d "$json" "$BASE_URL:update?key=$API_KEY")
-
-    error=$(echo "$response" | jq -r '.error.message')
-
-    if [ "$error" != "null" ]; then
-
-        echo "Error: $error"
-
-    else
-
-        echo "User updated successfully."
-
-    fi
-
+  # Display response
+  echo $response
 }
 
-# function to delete user
-
+# Function to delete an existing user
 delete_user() {
+  # Get user email from input
+  read -p "Enter user email: " email
 
-    read -p "Enter user id: " userId
+  # Send API request to delete user
+  response=$(curl -s -X DELETE \
+  "$ENDPOINT/deleteUser" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data '{"email":"'"$email"'"}')
 
-    json="{\"idToken\":\"$userId\"}"
-
-    response=$(curl -s -X POST -H "Content-Type: application/json" -d "$json" "$BASE_URL:delete?key=$API_KEY")
-
-    error=$(echo "$response" | jq -r '.error.message')
-
-    if [ "$error" != "null" ]; then
-
-        echo "Error: $error"
-
-    else
-
-        echo "User deleted successfully."
-
-    fi
-
+  # Display response
+  echo $response
 }
 
-# main function
-
+# Main function
 main() {
+  # Generate token using custom token
+  generate_token
 
-    echo "User Management Script"
+  # Display options for user management
+  echo "Select an option:"
+  echo "1. Create user"
+  echo "2. Update user"
+  echo "3. Delete user"
+  read -p "Option: " option
 
-    echo "1. Create User"
-
-    echo "2. Get User Info"
-
-    echo "3. Update User Info"
-
-    echo "4. Delete User"
-
-    read -p "Enter your choice (1-4): " choice
-
-    case $choice in
-
-        1) create_user ;;
-
-        2) get_user ;;
-
-        3) update_user ;;
-
-        4) delete_user ;;
-
-        *) echo "Invalid choice." ;;
-
-    esac
-
+  # Call appropriate function based on user's choice
+  case $option in
+    1)
+      create_user
+      ;;
+    2)
+      update_user
+      ;;
+    3)
+      delete_user
+      ;;
+    *)
+      echo "Invalid option. Please try again."
+      ;;
+  esac
 }
 
+# Call main function
 main
-
