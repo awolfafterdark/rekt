@@ -38,9 +38,15 @@ payload='{
 }'
 
 # Sign the token using the API key
-TOKEN=$(echo -n "$payload" | openssl dgst -sha256 -binary -hmac "$api_key" | openssl base64 -A)
+TOKEN1=$(echo -n "$payload" | openssl dgst -sha256 -binary -hmac "$api_key" | openssl base64 -A)
 
-echo "Generated token: $TOKEN"
+#!/bin/bash
+
+AUTHTOKEN=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"token\":\"$TOKEN1\",\"returnSecureToken\":true}" "https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=$API_KEY" | jq -r '.idToken')
+
+
+
+echo "Generated token: $TOKEN1"
 
 echo "Select an option:"
 
@@ -74,7 +80,7 @@ case $option in
 
     read userId
 
-    curl -s -X POST "https://identitytoolkit.googleapis.com/v1/accounts:delete?key=$API_KEY" -H "Content-Type: application/json" --data-binary '{"localId":"'$userId'", "idToken":"'$TOKEN'"}' | jq .
+    curl -s -X POST "https://identitytoolkit.googleapis.com/v1/accounts:delete?key=$API_KEY" -H "Content-Type: application/json" --data-binary '{"localId":"'$userId'", "idToken":"'$AUTHTOKEN'"}' | jq .
 
     ;;
 
@@ -84,7 +90,7 @@ case $option in
 
     read userId
 
-    curl -s -X POST "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=$API_KEY" -H "Content-Type: application/json" --data-binary '{"localId":"'$userId'", "idToken":"'$TOKEN'"}' | jq .
+    curl -s -X POST "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=$API_KEY" -H "Content-Type: application/json" --data-binary '{"localId":"'$userId'", "idToken":"'$AUTHTOKEN'"}' | jq .
 
     ;;
 
